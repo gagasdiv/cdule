@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deepaksinghvi/cdule/pkg"
-	"github.com/deepaksinghvi/cdule/pkg/model"
+	"github.com/mmanda-extr/cdule/pkg"
+	"github.com/mmanda-extr/cdule/pkg/model"
 
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"

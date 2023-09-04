@@ -3,7 +3,7 @@ package model
 import (
 	"testing"
 
-	"github.com/deepaksinghvi/cdule/pkg"
+	"github.com/mmanda-extr/cdule/pkg"
 	"github.com/stretchr/testify/require"
 )
 

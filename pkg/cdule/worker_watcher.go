@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deepaksinghvi/cdule/pkg/model"
+	"github.com/mmanda-extr/cdule/pkg/model"
 
 	log "github.com/sirupsen/logrus"
 )
