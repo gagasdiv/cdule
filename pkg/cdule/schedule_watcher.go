@@ -67,6 +67,9 @@ func runNextScheduleJobs(scheduleStart, scheduleEnd int64) {
 			log.Errorf("Error while running Schedule for %d : %s", schedule.JobID, err.Error())
 			continue
 		}
+		if scheduledJob == nil {
+			continue
+		}
 		log.Info("====START====")
 		log.Infof("Schedule for JobName: %s, Exeuction Time %d at Worker %s", scheduledJob.JobName, schedule.ExecutionID, schedule.WorkerID)
 		jobDataStr := schedule.JobData
