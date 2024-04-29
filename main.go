@@ -44,7 +44,7 @@ type TestJob struct {
 }
 
 func (m TestJob) Execute(jobData map[string]string) {
-	log.Info("Execute(): In TestJob")
+	log.Debug("Execute(): In TestJob")
 	for k, v := range jobData {
 		valNum, err := strconv.Atoi(v)
 		if nil == err {

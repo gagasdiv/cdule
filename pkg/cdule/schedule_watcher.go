@@ -36,7 +36,7 @@ func (t *ScheduleWatcher) Run() {
 			lastScheduleExecutionTime = now.Add(-1 * time.Minute).UnixNano()
 			nextScheduleExecutionTime = now.UnixNano()
 
-			log.Infof("lastScheduleExecutionTime %d, nextScheduleExecutionTime %d", lastScheduleExecutionTime, nextScheduleExecutionTime)
+			log.Debugf("lastScheduleExecutionTime %d, nextScheduleExecutionTime %d", lastScheduleExecutionTime, nextScheduleExecutionTime)
 			runNextScheduleJobs(lastScheduleExecutionTime, nextScheduleExecutionTime)
 		}
 	}
@@ -70,8 +70,8 @@ func runNextScheduleJobs(scheduleStart, scheduleEnd int64) {
 		if scheduledJob == nil {
 			continue
 		}
-		log.Info("====START====")
-		log.Infof("Schedule for JobName: %s, Exeuction Time %d at Worker %s", scheduledJob.JobName, schedule.ExecutionID, schedule.WorkerID)
+		log.Debug("====START====")
+		log.Debugf("Schedule for JobName: %s, Exeuction Time %d at Worker %s", scheduledJob.JobName, schedule.ExecutionID, schedule.WorkerID)
 		jobDataStr := schedule.JobData
 		var jobDataMap map[string]string
 		if pkg.EMPTYSTRING != jobDataStr {
@@ -110,8 +110,8 @@ func runNextScheduleJobs(scheduleStart, scheduleEnd int64) {
 				model.CduleRepos.CduleRepository.UpdateJobHistory(jobHistory)
 
 				jobDataMap = executeJob(jobInstance, jobHistory, &jobDataMap)
-				log.Infof("Job Execution Completed For JobName: %s JobID: %d on Worker: %s", scheduledJob.JobName, schedule.JobID, schedule.WorkerID)
-				log.Info("====END====\n")
+				log.Debugf("Job Execution Completed For JobName: %s JobID: %d on Worker: %s", scheduledJob.JobName, schedule.JobID, schedule.WorkerID)
+				log.Debug("====END====\n")
 			}
 			// Calculate the next schedule for the current job
 			jobDataBytes, err := json.Marshal(jobDataMap)
@@ -139,11 +139,11 @@ func runNextScheduleJobs(scheduleStart, scheduleEnd int64) {
 				JobData:     jobDataStr,
 			}
 			model.CduleRepos.CduleRepository.CreateSchedule(&newSchedule)
-			log.Infof("*** Next Job Scheduled Info ***\n JobName: %s,\n Schedule Cron: %s,\n Job Scheduled Time: %d,\n Worker: %s ",
+			log.Debugf("*** Next Job Scheduled Info ***\n JobName: %s,\n Schedule Cron: %s,\n Job Scheduled Time: %d,\n Worker: %s ",
 				scheduledJob.JobName, scheduledJob.CronExpression, newSchedule.ExecutionID, newSchedule.WorkerID)
 		}
 	}
-	log.Infof("Schedules Completed For StartTime %d To EndTime %d", scheduleStart, scheduleEnd)
+	log.Debugf("Schedules Completed For StartTime %d To EndTime %d", scheduleStart, scheduleEnd)
 }
 
 // WorkerJobCount struct
@@ -156,9 +156,9 @@ func findNextAvailableWorker(workers []model.Worker, schedule model.Schedule) (s
 	workerName := schedule.WorkerID
 	var workerJobCountMetrics []WorkerJobCount
 	model.DB.Raw("SELECT worker_id, count(1) FROM job_histories WHERE job_id = ? group by worker_id", schedule.JobID).Scan(&workerJobCountMetrics)
-	log.Infof("workerJobCountMetrics %v", workerJobCountMetrics)
+	log.Debugf("workerJobCountMetrics %v", workerJobCountMetrics)
 	if len(workerJobCountMetrics) <= 0 {
-		log.Infof("workerName %s would be used", workerName)
+		log.Debugf("workerName %s would be used", workerName)
 		return workerName, nil
 	}
 	for _, worker := range workers {
