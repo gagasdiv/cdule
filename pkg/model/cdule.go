@@ -1,8 +1,9 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // JobStatus for job status
@@ -24,13 +25,13 @@ type Model struct {
 	ID        int64 `gorm:"primarykey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"column:model_deleted_at; index"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at; index"`
 }
 
 // Job struct
 type Job struct {
 	Model
-	JobName        string `gorm:"index",json:"job_name"`
+	JobName        string `gorm:"index" json:"job_name"`
 	GroupName      string `json:"group_name"`
 	CronExpression string `json:"cron"`
 	Expired        bool   `json:"expired"`
@@ -50,8 +51,8 @@ type JobHistory struct {
 
 // Schedule used by Execution Routine to execute a scheduled job in the evert one minute duration
 type Schedule struct {
-	ExecutionID int64 `gorm:"primaryKey",json:"execution_id"`
-	JobID       int64 `gorm:"primaryKey",json:"job_id"`
+	ExecutionID int64 `gorm:"primaryKey" json:"execution_id"`
+	JobID       int64 `gorm:"primaryKey" json:"job_id"`
 	Job         Job   `gorm:"foreignKey:JobID;references:ID;constraint:OnDelete:CASCADE"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -62,7 +63,7 @@ type Schedule struct {
 
 // Worker Node health check via the heartbeat
 type Worker struct {
-	WorkerID  string `gorm:"primaryKey",json:"worker_id"`
+	WorkerID  string `gorm:"primaryKey" json:"worker_id"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`

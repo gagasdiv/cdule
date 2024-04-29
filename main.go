@@ -4,8 +4,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mmanda-extr/cdule/pkg/cdule"
-	"github.com/mmanda-extr/cdule/pkg/utils"
+	"github.com/gagasdiv/cdule/pkg"
+	"github.com/gagasdiv/cdule/pkg/cdule"
+	"github.com/gagasdiv/cdule/pkg/utils"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -16,7 +17,12 @@ TODO This TestJob schedule in main program is for the development debugging.
 
 func main() {
 	c := cdule.Cdule{}
-	c.NewCduleWithWorker("worker1")
+	c.NewCduleWithWorker("worker1", &pkg.CduleConfig{
+		Cduletype:        "DATABASE",
+		Dburl:            "postgres://postgres:postgres@localhost:5432/qweqwe?sslmode=disable",
+		Cduleconsistency: "AT_MOST_ONCE",
+		Loglevel:         0,
+	})
 
 	myJob := TestJob{}
 	jobData := make(map[string]string)
@@ -52,7 +58,7 @@ func (m TestJob) Execute(jobData map[string]string) {
 }
 
 func (m TestJob) JobName() string {
-	return "job.TestJob"
+	return "job.TestJob2"
 }
 
 func (m TestJob) GetJobData() map[string]string {

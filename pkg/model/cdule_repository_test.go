@@ -3,16 +3,17 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"github.com/DATA-DOG/go-sqlmock"
-	log "github.com/sirupsen/logrus"
-	"gorm.io/driver/postgres"
 	l "log"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/mmanda-extr/cdule/pkg"
-	"github.com/mmanda-extr/cdule/pkg/utils"
+	"github.com/DATA-DOG/go-sqlmock"
+	log "github.com/sirupsen/logrus"
+	"gorm.io/driver/postgres"
+
+	"github.com/gagasdiv/cdule/pkg"
+	"github.com/gagasdiv/cdule/pkg/utils"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"

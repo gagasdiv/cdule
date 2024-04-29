@@ -4,7 +4,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/mmanda-extr/cdule/pkg/model"
+	"github.com/gagasdiv/cdule/pkg"
+	"github.com/gagasdiv/cdule/pkg/model"
 
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -24,24 +25,18 @@ func init() {
 }
 
 // NewCduleWithWorker to create new scheduler with worker
-func (cdule *Cdule) NewCduleWithWorker(workerName string, param ...string) {
+func (cdule *Cdule) NewCduleWithWorker(workerName string, config ...*pkg.CduleConfig) {
 	WorkerID = workerName
-	cdule.NewCdule(param...)
+	cdule.NewCdule(config...)
 }
 
 // NewCdule to create new scheduler with default worker name as hostname
-func (cdule *Cdule) NewCdule(param ...string) {
-	if nil == param {
-		param = []string{"./resources", "config", "errorLogType"} // default path for resources
-	}
-	_, err := model.ConnectDataBase(param)
-	if nil != err {
-		log.Errorf("Error getting configuration %s ", err.Error())
-		return
-	}
+func (cdule *Cdule) NewCdule(config ...*pkg.CduleConfig) {
+	cfg := pkg.ResolveConfig(config...)
+	model.ConnectDataBase(cfg)
 	worker, err := model.CduleRepos.CduleRepository.GetWorker(WorkerID)
 	if nil != err {
-		log.Errorf("Error getting workder %s ", err.Error())
+		log.Errorf("Error getting worker %s ", err.Error())
 		return
 	}
 	if nil != worker {

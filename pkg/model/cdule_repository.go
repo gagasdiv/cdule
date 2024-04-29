@@ -1,10 +1,11 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"time"
 
-	"github.com/mmanda-extr/cdule/pkg"
+	"gorm.io/gorm"
+
+	"github.com/gagasdiv/cdule/pkg"
 )
 
 type cduleRepository struct {

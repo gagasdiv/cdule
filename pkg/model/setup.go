@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mmanda-extr/cdule/pkg"
+	"github.com/gagasdiv/cdule/pkg"
 
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
@@ -31,13 +31,7 @@ type Repositories struct {
 }
 
 // ConnectDataBase to create a database connection
-func ConnectDataBase(param []string) (*pkg.CduleConfig, error) {
-	cduleConfig, err := readConfig(param)
-	if nil != err {
-		log.Error(err)
-		panic("Failed to read config!")
-	}
-	printConfig(cduleConfig)
+func ConnectDataBase(cduleConfig *pkg.CduleConfig) {
 	var db *gorm.DB
 	if cduleConfig.Cduletype == string(pkg.DATABASE) {
 		if strings.Contains(cduleConfig.Dburl, "postgres") {
@@ -49,18 +43,14 @@ func ConnectDataBase(param []string) (*pkg.CduleConfig, error) {
 		db = sqliteConn(cduleConfig.Dburl)
 	}
 
-	logLevel := logger.Error
-	if len(param) > 2 && param[2] != "errorLogType" {
-		logLevel = logger.Info
-	}
 	// Set LogLevel to `logger.Silent` to stop logging sqls
 	sqlLogger := logger.New(
 		l.New(os.Stdout, "\r\n", l.LstdFlags), // io writer
 		logger.Config{
-			SlowThreshold:             time.Second, // Slow SQL threshold
-			LogLevel:                  logLevel,    // Log level
-			IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
-			Colorful:                  true,        // Disable color
+			SlowThreshold:             time.Second,          // Slow SQL threshold
+			LogLevel:                  cduleConfig.Loglevel, // Log level
+			IgnoreRecordNotFoundError: true,                 // Ignore ErrRecordNotFound error for logger
+			Colorful:                  true,                 // Disable color
 		},
 	)
 	db.Logger = sqlLogger
@@ -72,7 +62,6 @@ func ConnectDataBase(param []string) (*pkg.CduleConfig, error) {
 		CduleRepository: NewCduleRepository(db),
 		DB:              db,
 	}
-	return cduleConfig, err
 }
 
 func postgresConn(dbDSN string) (db *gorm.DB) {

@@ -23,28 +23,28 @@ Job history would be persisted and maintained in job_histories table.
 
 ## Configuration
 
-User needs to create a resources/config.yml in their project home directory with the followling keys
+This fork differs from the original repo in that the responsibility of making the config object is shifted to the caller script; which means cdule's config can be moved/merged/integrated with already existing configuration storage in a project. The classic `.yml` file (or whichever config system you use) can still be used, but again, the responsibility is yours to form the config object.
 
-* cduletype
-* dburl
-* cduleconsistency
+I forked this package originally because I had all my config in an existing `.env` file.
 
-cduletype is used to specify whether it is an In-Memory or Database based configuration. Possible values are DATABASE and MEMORY.
-dburl is the database connection url.
-cduleconsistency is for reserved for future usage.
+The following are the config keys:
 
-### config.yml for postgressql based configuration
-```
-cduletype: DATABASE
-dburl: postgres://cduleuser:cdulepassword@localhost:5432/cdule?sslmode=disable
-cduleconsistency: AT_MOST_ONCE
-```
+| Key | Description |
+| ----------- | ----------- |
+| `Cduletype` | Specify whether it is an In-Memory or Database based configuration. Possible values are `"DATABASE"` and `"MEMORY"`. |
+| `Dburl` | The database connection url. For `DATABASE` the supported ones are `postgres` and `mysql`; `MEMORY` will use `sqlite`. |
+| `Cduleconsistency` | Reserved for future usage. |
+| `Loglevel` | The log level to give `gorm`. |
 
-### config.yml for sqlite based in-memory configuration
-```
-cduletype: MEMORY
-dburl: /Users/dsinghvi/sqlite.db
-cduleconsistency: AT_MOST_ONCE
+
+### Example configuration values:
+```go
+&CduleConfig{
+	Cduletype:        "DATABASE",
+	Dburl:            "postgres://user:pass@localhost:5432/cdule?sslmode=disable",
+	Cduleconsistency: "AT_MOST_ONCE",
+	Loglevel:         logger.Error,
+}
 ```
 
 
@@ -141,14 +141,7 @@ EveryMonthOnSecondAtNoon = "0 0 12 2 * ?"
 ```
 
 
-### This library is built using 
+### This library is built using
 
-* Cron parser using the library [robfig/cron](https://github.com/robfig/cron)  
+* Cron parser using the library [robfig/cron](https://github.com/robfig/cron)
 * ORM usign the library [gorm.io](https://gorm.io/)
-
-### Other Reports
-pkg.go.dev: https://pkg.go.dev/github.com/deepaksinghvi/cdule
-
-goreportcard.com: https://goreportcard.com/report/github.com/deepaksinghvi/cdule
-
-coverage service link: https://app.codecov.io/gh/deepaksinghvi/cdule

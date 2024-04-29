@@ -1,18 +1,18 @@
 package model
 
 import (
-	"github.com/mmanda-extr/cdule/pkg"
-	log "github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
+
+	"github.com/gagasdiv/cdule/pkg"
+	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_ConnectDatabase(t *testing.T) {
-	param := []string{"../../resources", "config_in_memory", "Info"} // default path for resource
-	cduleConfig, err := ConnectDataBase(param)
-	require.NoError(t, err)
-	require.NotEqual(t, pkg.EMPTYSTRING, cduleConfig.Dburl)
+	config := pkg.NewDefaultConfig()
+	ConnectDataBase(config)
+	require.NotEqual(t, pkg.EMPTYSTRING, config.Dburl)
 }
 
 func Test_ConnectDatabaseFailedToReadConfig(t *testing.T) {
@@ -23,8 +23,8 @@ func Test_ConnectDatabaseFailedToReadConfig(t *testing.T) {
 			recovered = true
 		}
 	}()
-	param := []string{"./resources", "config_in_memory", "Info"} // default path for resource
-	_, _ = ConnectDataBase(param)
+	config := pkg.NewDefaultConfig()
+	ConnectDataBase(config)
 	require.EqualValues(t, true, recovered)
 }
 
