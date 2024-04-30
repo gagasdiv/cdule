@@ -47,6 +47,8 @@ type CduleRepository interface {
 	UpdateSchedule(schedule *Schedule) (*Schedule, error)
 	GetSchedule(scheduleID int64) (*Schedule, error)
 	GetScheduleBetween(scheduleStart, scheduleEnd int64, workerID string) ([]Schedule, error)
+	GetScheduleBefore(nanoUnix int64, workerID string) ([]Schedule, error)
+	GetPassedSchedule(nanoUnix int64, workerID string, onlyOnces bool) ([]Schedule, error)
 	GetSchedulesForJob(jobID int64) ([]Schedule, error)
 	GetSchedulesForWorker(workerID string) ([]Schedule, error)
 	DeleteScheduleForJob(jobID int64) ([]Schedule, error)
@@ -246,6 +248,31 @@ func (c cduleRepository) GetSchedule(executionID int64) (*Schedule, error) {
 func (c cduleRepository) GetScheduleBetween(scheduleStart, scheduleEnd int64, workerID string) ([]Schedule, error) {
 	var schedules []Schedule
 	if err := c.DB.Where("execution_id >= ? and execution_id <= ? and worker_id = ?", scheduleStart, scheduleEnd, workerID).Find(&schedules).Error; err != nil {
+		return nil, err
+	}
+	return schedules, nil
+}
+
+// GetScheduleBefore to get all schedules before nanoUnix and by workerID
+func (c cduleRepository) GetScheduleBefore(nanoUnix int64, workerID string) ([]Schedule, error) {
+	var schedules []Schedule
+	if err := c.DB.Preload("Job").Where("execution_id <= ? and worker_id = ?", nanoUnix, workerID).Order("execution_id ASC").Find(&schedules).Error; err != nil {
+		return nil, err
+	}
+	return schedules, nil
+}
+
+// GetPassedSchedule to get all schedules before nanoUnix and by workerID, and ones that are not done yet
+func (c cduleRepository) GetPassedSchedule(nanoUnix int64, workerID string, onlyOnces bool) ([]Schedule, error) {
+	var schedules []Schedule
+	query := c.DB.Debug().
+		Joins("Job", DB.Where(&Job{ Once: onlyOnces })).
+		Joins(`left join job_histories jh on schedules.execution_id = jh.execution_id and schedules.job_id = jh.job_id and not jh.status = ?`, JobStatusFailed).
+		Where(`jh.id is null`).
+		Where(`("schedules"."execution_id" <= ? and "schedules"."worker_id" = ?)`, nanoUnix, workerID).
+		Order(`"schedules"."execution_id" asc`)
+
+	if err := query.Find(&schedules).Error; err != nil {
 		return nil, err
 	}
 	return schedules, nil

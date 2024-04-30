@@ -35,6 +35,7 @@ type Job struct {
 	GroupName      string `json:"group_name"`
 	CronExpression string `json:"cron"`
 	Expired        bool   `json:"expired"`
+	Once           bool   `json:"once"`
 	JobData        string `json:"job_data"`
 }
 
@@ -53,7 +54,8 @@ type JobHistory struct {
 type Schedule struct {
 	ExecutionID int64 `gorm:"primaryKey" json:"execution_id"`
 	JobID       int64 `gorm:"primaryKey" json:"job_id"`
-	Job         Job   `gorm:"foreignKey:JobID;references:ID;constraint:OnDelete:CASCADE"`
+	Job         Job   `gorm:"foreignKey:job_id;references:id;constraint:OnDelete:CASCADE"`
+	// JobHistories []JobHistory `gorm:"foreignKey:execution_id,job_id;references:execution_id,job_id;constraint:OnDelete:CASCADE"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt `gorm:"index"`

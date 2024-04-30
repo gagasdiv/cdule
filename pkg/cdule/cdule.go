@@ -18,6 +18,7 @@ var WorkerID string
 type Cdule struct {
 	*WorkerWatcher
 	*ScheduleWatcher
+	PastScheduleWatcher *PastScheduleWatcher
 }
 
 func init() {
@@ -53,10 +54,10 @@ func (cdule *Cdule) NewCdule(config ...*pkg.CduleConfig) {
 		model.CduleRepos.CduleRepository.CreateWorker(&worker)
 	}
 
-	cdule.createWatcherAndWaitForSignal()
+	cdule.createWatcherAndWaitForSignal(cfg.WatchPast)
 }
 
-func (cdule *Cdule) createWatcherAndWaitForSignal() {
+func (cdule *Cdule) createWatcherAndWaitForSignal(watchPast bool) {
 	/*
 		schedule watcher stop logic to abort program with signal like ctrl + c
 		c := make(chan os.Signal)
@@ -66,11 +67,20 @@ func (cdule *Cdule) createWatcherAndWaitForSignal() {
 	schedulerWatcher := createSchedulerWatcher()
 	cdule.WorkerWatcher = workerWatcher
 	cdule.ScheduleWatcher = schedulerWatcher
+
+	var pastScheduleWatcher *PastScheduleWatcher
+	if watchPast {
+		pastScheduleWatcher = createPastSchedulerWatcher()
+		cdule.PastScheduleWatcher = pastScheduleWatcher
+	}
 	/*select {
 	case sig := <-c:
 		fmt.Printf("Received %s signal. Aborting...\n", sig)
 		workerWatcher.Stop()
 		schedulerWatcher.Stop()
+		if pastScheduleWatcher != nil {
+			pastScheduleWatcher.Stop()
+		}
 	}*/
 }
 
@@ -78,6 +88,10 @@ func (cdule *Cdule) createWatcherAndWaitForSignal() {
 func (cdule Cdule) StopWatcher() {
 	cdule.WorkerWatcher.Stop()
 	cdule.ScheduleWatcher.Stop()
+
+	if cdule.PastScheduleWatcher != nil {
+		cdule.PastScheduleWatcher.Stop()
+	}
 }
 func createWorkerWatcher() *WorkerWatcher {
 	workerWatcher := &WorkerWatcher{
@@ -105,6 +119,22 @@ func createSchedulerWatcher() *ScheduleWatcher {
 		scheduleWatcher.Run()
 	}()
 	return scheduleWatcher
+}
+
+func createPastSchedulerWatcher() *PastScheduleWatcher {
+	pastScheduleWatcher := &PastScheduleWatcher{
+		ScheduleWatcher: ScheduleWatcher{
+			Closed: make(chan struct{}),
+			Ticker: time.NewTicker(time.Minute * 1),
+		},
+	}
+
+	pastScheduleWatcher.WG.Add(1)
+	go func() {
+		defer pastScheduleWatcher.WG.Done()
+		pastScheduleWatcher.Run()
+	}()
+	return pastScheduleWatcher
 }
 
 func getWorkerID() string {

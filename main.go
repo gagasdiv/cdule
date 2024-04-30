@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/duke-git/lancet/v2/random"
 	"github.com/gagasdiv/cdule/pkg"
 	"github.com/gagasdiv/cdule/pkg/cdule"
-	"github.com/gagasdiv/cdule/pkg/utils"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -22,14 +22,20 @@ func main() {
 		Dburl:            "postgres://postgres:postgres@localhost:5432/qweqwe?sslmode=disable",
 		Cduleconsistency: "AT_MOST_ONCE",
 		Loglevel:         0,
+		WatchPast:        true,
 	})
 
-	myJob := TestJob{}
+	log.SetLevel(log.DebugLevel)
+
+	myJob := TestJob{
+		Name: random.RandNumeralOrLetter(16),
+	}
 	jobData := make(map[string]string)
 	jobData["one"] = "1"
 	jobData["two"] = "2"
 	jobData["three"] = "3"
-	_, err := cdule.NewJob(&myJob, jobData).Build(utils.EveryMinute)
+	runAt, _ := time.Parse("2006-01-02 15:04:05-07:00", "2024-04-29 17:20:00+07:00")
+	_, err := cdule.NewJob(&myJob, jobData).BuildToRunAt(runAt)
 	if nil != err {
 		log.Error(err)
 	}
@@ -41,10 +47,12 @@ var testJobData map[string]string
 
 type TestJob struct {
 	Job cdule.Job
+	Name string
 }
 
 func (m TestJob) Execute(jobData map[string]string) {
 	log.Debug("Execute(): In TestJob")
+	println("AAAAAAAAA mgwrngp wrnmg wrmgpmwr pgmpwor mgpowrm gpowrmg wor gmwro gmwA AAAAAAAAAAAAAAAA")
 	for k, v := range jobData {
 		valNum, err := strconv.Atoi(v)
 		if nil == err {
@@ -58,7 +66,7 @@ func (m TestJob) Execute(jobData map[string]string) {
 }
 
 func (m TestJob) JobName() string {
-	return "job.TestJob2"
+	return m.Name
 }
 
 func (m TestJob) GetJobData() map[string]string {

@@ -11,7 +11,6 @@ import (
 
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // JobRegistry job registry
@@ -42,12 +41,6 @@ func NewJob(job Job, jobData map[string]string) *AbstractJob {
 
 // Build to build job and store in the database
 func (j *AbstractJob) Build(cronExpression string) (*model.Job, error) {
-	// register job, this is used later to get the type of a job
-	registerType(j.Job)
-	newJobModel, err := model.CduleRepos.CduleRepository.GetJobByName(j.Job.JobName())
-	if nil != newJobModel || nil != err {
-		return nil, fmt.Errorf("job with Name: %s already exists", newJobModel.JobName)
-	}
 	jobDataBytes, err := json.Marshal(j.JobData)
 	/*if nil != err {
 		log.Errorf("Error %s for JobName %s", err.Error(), j.Job.JobName())
@@ -58,12 +51,12 @@ func (j *AbstractJob) Build(cronExpression string) (*model.Job, error) {
 		jobDataStr = string(jobDataBytes)
 	}
 	newJob := &model.Job{
-		Model:          model.Model{},
 		JobName:        j.Job.JobName(),
 		GroupName:      "",
 		CronExpression: cronExpression,
 		Expired:        false,
 		JobData:        jobDataStr,
+		Once:           false,
 	}
 	SchedulerParser, err := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow).Parse(newJob.CronExpression)
 	if err != nil {
@@ -71,26 +64,75 @@ func (j *AbstractJob) Build(cronExpression string) (*model.Job, error) {
 		return nil, err
 	}
 	nextRunTime := SchedulerParser.Next(time.Now()).UnixNano()
-	job, err := model.CduleRepos.CduleRepository.CreateJob(newJob)
-	if err != nil {
-		log.Error(err.Error())
-		return nil, err
-	}
 	firstSchedule := &model.Schedule{
 		ExecutionID: nextRunTime,
-		CreatedAt:   time.Time{},
-		UpdatedAt:   time.Time{},
-		DeletedAt:   gorm.DeletedAt{},
 		WorkerID:    WorkerID,
-		JobID:       job.ID,
-		JobData:     job.JobData,
+		JobData:     newJob.JobData,
 	}
-	_, err = model.CduleRepos.CduleRepository.CreateSchedule(firstSchedule)
+	job, _, err := j.buildFirstSchedule(newJob, firstSchedule)
+	return job, err
+}
+
+// BuildToRunAt to build job to run only once and store in the database
+func (j *AbstractJob) BuildToRunAt(t time.Time) (*model.Job, error) {
+	jobDataBytes, err := json.Marshal(j.JobData)
+	/*if nil != err {
+		log.Errorf("Error %s for JobName %s", err.Error(), j.Job.JobName())
+		return nil, fmt.Errorf("invalid Job Data %v", j.JobData)
+	}*/
+	var jobDataStr = ""
+	if string(jobDataBytes) != pkg.EMPTYSTRING {
+		jobDataStr = string(jobDataBytes)
+	}
+	newJob := &model.Job{
+		JobName:        j.Job.JobName(),
+		GroupName:      "",
+		CronExpression: "",
+		Expired:        false,
+		JobData:        jobDataStr,
+		Once:           true,
+	}
+	nextRunTime := t.UnixNano()
+	firstSchedule := &model.Schedule{
+		ExecutionID: nextRunTime,
+		WorkerID:    WorkerID,
+		JobData:     newJob.JobData,
+	}
+	job, _, err := j.buildFirstSchedule(newJob, firstSchedule)
+	return job, err
+}
+
+// BuildToRunIn to build job to run only once and store in the database
+func (j *AbstractJob) BuildToRunIn(n time.Duration) (*model.Job, error) {
+	return j.BuildToRunAt(time.Now().Add(n))
+}
+
+// BuildToRunNow to build job to run immediately only once and store in the database
+func (j *AbstractJob) BuildToRunNow() (*model.Job, error) {
+	return j.BuildToRunAt(time.Now())
+}
+
+// Build to build job and store in the database
+func (j *AbstractJob) buildFirstSchedule(job *model.Job, schedule *model.Schedule) (*model.Job, *model.Schedule, error) {
+	// register job, this is used later to get the type of a job
+	registerType(j.Job)
+	jobModel, err := model.CduleRepos.CduleRepository.GetJobByName(j.Job.JobName())
+	if nil != jobModel || nil != err {
+		return nil, nil, fmt.Errorf("job with Name: %s already exists", jobModel.JobName)
+	}
+	job, err = model.CduleRepos.CduleRepository.CreateJob(job)
 	if err != nil {
 		log.Error(err.Error())
-		return job, err
+		return nil, nil, err
+	}
+
+	schedule.JobID = job.ID
+	_, err = model.CduleRepos.CduleRepository.CreateSchedule(schedule)
+	if err != nil {
+		log.Error(err.Error())
+		return job, nil, err
 	}
 	log.Debugf("*** Job Scheduled Info ***\n JobName: %s,\n Schedule Cron: %s,\n Job Scheduled Time: %d,\n Worker: %s ",
-		newJob.JobName, newJob.CronExpression, firstSchedule.ExecutionID, firstSchedule.WorkerID)
-	return job, err
+		job.JobName, job.CronExpression, schedule.ExecutionID, schedule.WorkerID)
+	return job, schedule, err
 }

@@ -8,6 +8,7 @@ type CduleConfig struct {
 	Dburl            string          `yaml:"dburl"` // underscore creates the problem for e.f. db_url, so should be avoided
 	Cduleconsistency string          `yaml:"cduleconsistency"`
 	Loglevel         logger.LogLevel `yaml:"loglevel"` // gorm log level
+	WatchPast        bool            `yaml:"watchpast"`
 }
 
 func NewDefaultConfig() *CduleConfig {
@@ -16,6 +17,7 @@ func NewDefaultConfig() *CduleConfig {
 		Dburl:            "postgres://cduleuser:cdulepassword@localhost:5432/cdule?sslmode=disable",
 		Cduleconsistency: "AT_MOST_ONCE",
 		Loglevel:         logger.Error,
+		WatchPast:        false,
 	}
 }
 

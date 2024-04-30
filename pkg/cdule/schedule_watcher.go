@@ -49,13 +49,20 @@ func (t *ScheduleWatcher) Stop() {
 }
 
 func runNextScheduleJobs(scheduleStart, scheduleEnd int64) {
-	defer panicRecoveryForSchedule()
-
 	schedules, err := model.CduleRepos.CduleRepository.GetScheduleBetween(scheduleStart, scheduleEnd, WorkerID)
 	if nil != err {
 		log.Error(err)
 		return
 	}
+
+	runScheduleJobs(schedules)
+
+	log.Debugf("Schedules Completed For StartTime %d To EndTime %d", scheduleStart, scheduleEnd)
+}
+
+func runScheduleJobs(schedules []model.Schedule) {
+	defer panicRecoveryForSchedule()
+
 	workers, err := model.CduleRepos.CduleRepository.GetAliveWorkers()
 	if nil != err {
 		log.Error(err)
@@ -68,6 +75,7 @@ func runNextScheduleJobs(scheduleStart, scheduleEnd int64) {
 			continue
 		}
 		if scheduledJob == nil {
+			log.Debugf("Schedule job is nil for worker_id %s, skipping", WorkerID)
 			continue
 		}
 		log.Debug("====START====")
@@ -113,6 +121,12 @@ func runNextScheduleJobs(scheduleStart, scheduleEnd int64) {
 				log.Debugf("Job Execution Completed For JobName: %s JobID: %d on Worker: %s", scheduledJob.JobName, schedule.JobID, schedule.WorkerID)
 				log.Debug("====END====\n")
 			}
+
+			if scheduledJob.Once || scheduledJob.CronExpression == "" {
+				log.Debugf("Job Only Once For JobName: %s JobID: %d on Worker: %s, skipping calculation for next schedule", scheduledJob.JobName, schedule.JobID, schedule.WorkerID)
+				continue
+			}
+
 			// Calculate the next schedule for the current job
 			jobDataBytes, err := json.Marshal(jobDataMap)
 			if nil != err {
@@ -143,7 +157,6 @@ func runNextScheduleJobs(scheduleStart, scheduleEnd int64) {
 				scheduledJob.JobName, scheduledJob.CronExpression, newSchedule.ExecutionID, newSchedule.WorkerID)
 		}
 	}
-	log.Debugf("Schedules Completed For StartTime %d To EndTime %d", scheduleStart, scheduleEnd)
 }
 
 // WorkerJobCount struct
