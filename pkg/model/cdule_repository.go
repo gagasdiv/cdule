@@ -265,7 +265,7 @@ func (c cduleRepository) GetScheduleBefore(nanoUnix int64, workerID string) ([]S
 // GetPassedSchedule to get all schedules before nanoUnix and by workerID, and ones that are not done yet
 func (c cduleRepository) GetPassedSchedule(nanoUnix int64, workerID string, onlyOnces bool) ([]Schedule, error) {
 	var schedules []Schedule
-	query := c.DB.Debug().
+	query := c.DB.
 		Joins("Job", DB.Where(&Job{ Once: onlyOnces })).
 		Joins(`left join job_histories jh on schedules.execution_id = jh.execution_id and schedules.job_id = jh.job_id and not jh.status = ?`, JobStatusFailed).
 		Where(`jh.id is null`).
