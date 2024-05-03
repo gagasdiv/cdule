@@ -29,7 +29,7 @@ func Test_ConnectDatabaseFailedToReadConfig(t *testing.T) {
 }
 
 func Test_ConnectPostgresDB(t *testing.T) {
-	db := postgresConn("postgres://cduleuser:cdulepassword@localhost:5432/cdule?sslmode=disable")
+	db := postgresConn("postgres://cduleuser:cdulepassword@localhost:5432/cdule?sslmode=disable", "")
 	require.NotNil(t, db)
 }
 
@@ -41,7 +41,7 @@ func Test_ConnectPostgresDBPanic(t *testing.T) {
 			recovered = true
 		}
 	}()
-	db := postgresConn("postgres://abc:abc@localhost:5432/cdule?sslmode=disable")
+	db := postgresConn("postgres://abc:abc@localhost:5432/cdule?sslmode=disable", "")
 	require.Nil(t, db)
 	require.EqualValues(t, true, recovered)
 }
@@ -53,7 +53,7 @@ func Test_ConnectSqlite(t *testing.T) {
 	}
 	_ = os.Remove(dirname + "/sqlite.db")
 
-	db := sqliteConn(dirname + "/sqlite.db")
+	db := sqliteConn(dirname + "/sqlite.db", "")
 	require.NotNil(t, db)
 }
 
@@ -71,7 +71,7 @@ func Test_ConnectSqliteDBPanic(t *testing.T) {
 	}
 	_ = os.Remove(dirname + "/sqlite.db")
 
-	db := sqliteConn("///")
+	db := sqliteConn("///", "")
 	require.Nil(t, db)
 	require.EqualValues(t, true, recovered)
 }

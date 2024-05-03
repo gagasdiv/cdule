@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -106,6 +107,9 @@ func (c cduleRepository) GetAliveWorkers() ([]Worker, error) {
 // DeleteWorker to delete a worker
 func (c cduleRepository) DeleteWorker(workerID string) (*Worker, error) {
 	worker, err := c.GetWorker(workerID)
+	if err != nil {
+		return nil, err
+	}
 	if err = c.DB.Delete(&worker).Error; err != nil {
 		return nil, err
 	}
@@ -265,12 +269,14 @@ func (c cduleRepository) GetScheduleBefore(nanoUnix int64, workerID string) ([]S
 // GetPassedSchedule to get all schedules before nanoUnix and by workerID, and ones that are not done yet
 func (c cduleRepository) GetPassedSchedule(nanoUnix int64, workerID string, onlyOnces bool) ([]Schedule, error) {
 	var schedules []Schedule
+	scheduleTableName := getTableName(Schedule{})
+	jobHistoriesTableName := getTableName(JobHistory{})
 	query := c.DB.
 		Joins("Job", DB.Where(&Job{ Once: onlyOnces })).
-		Joins(`left join job_histories jh on schedules.execution_id = jh.execution_id and schedules.job_id = jh.job_id and not jh.status = ?`, JobStatusFailed).
-		Where(`jh.id is null`).
-		Where(`("schedules"."execution_id" <= ? and "schedules"."worker_id" = ?)`, nanoUnix, workerID).
-		Order(`"schedules"."execution_id" asc`)
+		Joins(fmt.Sprintf(`left join %[2]s cjh on %[1]s.execution_id = cjh.execution_id and %[1]s.job_id = cjh.job_id and not cjh.status = ?`, scheduleTableName, jobHistoriesTableName), JobStatusFailed).
+		Where(`cjh.id is null`).
+		Where(fmt.Sprintf(`(%[1]s.execution_id <= ? and %[1]s.worker_id = ?)`, scheduleTableName), nanoUnix, workerID).
+		Order(fmt.Sprintf(`%[1]s.execution_id asc`, scheduleTableName))
 
 	if err := query.Find(&schedules).Error; err != nil {
 		return nil, err

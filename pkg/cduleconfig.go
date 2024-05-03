@@ -9,6 +9,7 @@ type CduleConfig struct {
 	Cduleconsistency string          `yaml:"cduleconsistency"`
 	Loglevel         logger.LogLevel `yaml:"loglevel"` // gorm log level
 	WatchPast        bool            `yaml:"watchpast"`
+	TablePrefix      string          `yaml:"tableprefix"`
 }
 
 func NewDefaultConfig() *CduleConfig {
@@ -18,6 +19,7 @@ func NewDefaultConfig() *CduleConfig {
 		Cduleconsistency: "AT_MOST_ONCE",
 		Loglevel:         logger.Error,
 		WatchPast:        false,
+		TablePrefix:      "",
 	}
 }
 

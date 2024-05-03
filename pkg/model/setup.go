@@ -16,6 +16,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 )
 
 // DB gorm DB
@@ -35,12 +36,12 @@ func ConnectDataBase(cduleConfig *pkg.CduleConfig) {
 	var db *gorm.DB
 	if cduleConfig.Cduletype == string(pkg.DATABASE) {
 		if strings.Contains(cduleConfig.Dburl, "postgres") {
-			db = postgresConn(cduleConfig.Dburl)
+			db = postgresConn(cduleConfig.Dburl, cduleConfig.TablePrefix)
 		} else if strings.Contains(cduleConfig.Dburl, "mysql") {
-			db = mysqlConn(cduleConfig.Dburl)
+			db = mysqlConn(cduleConfig.Dburl, cduleConfig.TablePrefix)
 		}
 	} else if cduleConfig.Cduletype == string(pkg.MEMORY) {
-		db = sqliteConn(cduleConfig.Dburl)
+		db = sqliteConn(cduleConfig.Dburl, cduleConfig.TablePrefix)
 	}
 
 	// Set LogLevel to `logger.Silent` to stop logging sqls
@@ -64,11 +65,15 @@ func ConnectDataBase(cduleConfig *pkg.CduleConfig) {
 	}
 }
 
-func postgresConn(dbDSN string) (db *gorm.DB) {
+func postgresConn(dbDSN string, tablePrefix string) (db *gorm.DB) {
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dbDSN,
 		PreferSimpleProtocol: true,
-	}), &gorm.Config{})
+	}), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			TablePrefix: tablePrefix,
+		},
+	})
 	if err != nil {
 		log.Errorf("Error Connecting Postgressql %s, %s", dbDSN, err.Error())
 		panic("Failed to connect to database! " + dbDSN)
@@ -76,10 +81,14 @@ func postgresConn(dbDSN string) (db *gorm.DB) {
 	return db
 }
 
-func mysqlConn(dbDSN string) (db *gorm.DB) {
+func mysqlConn(dbDSN string, tablePrefix string) (db *gorm.DB) {
 	// splitting DSN to only use the string after mysql://
 	splitDSN := strings.Split(dbDSN, "mysql://")
-	db, err := gorm.Open(mysql.Open(splitDSN[1]), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(splitDSN[1]), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			TablePrefix: tablePrefix,
+		},
+	})
 	if err != nil {
 		log.Errorf("Error Connecting MySQL %s, %s", dbDSN, err.Error())
 		panic("Failed to connect to database! " + dbDSN)
@@ -87,12 +96,16 @@ func mysqlConn(dbDSN string) (db *gorm.DB) {
 	return db
 }
 
-func sqliteConn(dbDSN string) (db *gorm.DB) {
+func sqliteConn(dbDSN string, tablePrefix string) (db *gorm.DB) {
 	//db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
 	//db, err := gorm.Open(sqlite.Open("sqlite.db"), &gorm.Config{})
 
 	// If you would use file based as mentioned above db
-	db, err := gorm.Open(sqlite.Open(dbDSN), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(dbDSN), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			TablePrefix: tablePrefix,
+		},
+	})
 	if err != nil {
 		log.Error(dbDSN)
 		panic("Failed to connect to database! " + dbDSN)
@@ -114,4 +127,10 @@ func printConfig(config *pkg.CduleConfig) {
 		log.Fatalf(err.Error())
 	}
 	fmt.Printf("Configuration %s\n", string(configJSON))
+}
+
+func getTableName(model interface{}) string {
+	stmt := &gorm.Statement{DB: CduleRepos.DB}
+	stmt.Parse(&model)
+	return stmt.Schema.Table
 }

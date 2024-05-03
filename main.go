@@ -23,6 +23,7 @@ func main() {
 		Cduleconsistency: "AT_MOST_ONCE",
 		Loglevel:         0,
 		WatchPast:        true,
+		TablePrefix:      "cdule_",
 	})
 
 	log.SetLevel(log.DebugLevel)

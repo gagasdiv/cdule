@@ -34,6 +34,7 @@ func (cdule *Cdule) NewCduleWithWorker(workerName string, config ...*pkg.CduleCo
 // NewCdule to create new scheduler with default worker name as hostname
 func (cdule *Cdule) NewCdule(config ...*pkg.CduleConfig) {
 	cfg := pkg.ResolveConfig(config...)
+
 	model.ConnectDataBase(cfg)
 	worker, err := model.CduleRepos.CduleRepository.GetWorker(WorkerID)
 	if nil != err {
