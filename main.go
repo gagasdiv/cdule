@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/duke-git/lancet/v2/random"
 	"github.com/gagasdiv/cdule/pkg"
 	"github.com/gagasdiv/cdule/pkg/cdule"
 
@@ -23,20 +22,21 @@ func main() {
 		Cduleconsistency: "AT_MOST_ONCE",
 		Loglevel:         0,
 		WatchPast:        true,
-		TablePrefix:      "cdule_",
+		// TablePrefix:      "cdule_",
 	})
 
 	log.SetLevel(log.DebugLevel)
 
-	myJob := TestJob{
-		Name: random.RandNumeralOrLetter(16),
+	myJob := &TestJob{
+		// Name: random.RandNumeralOrLetter(16),
+		Name: "TestJob",
 	}
 	jobData := make(map[string]string)
 	jobData["one"] = "1"
 	jobData["two"] = "2"
 	jobData["three"] = "3"
 	runAt, _ := time.Parse("2006-01-02 15:04:05-07:00", "2024-04-29 17:20:00+07:00")
-	_, err := cdule.NewJob(&myJob, jobData).BuildToRunAt(runAt)
+	_, err := cdule.NewJob(myJob, jobData).BuildToRunAt(runAt)
 	if nil != err {
 		log.Error(err)
 	}
@@ -51,7 +51,7 @@ type TestJob struct {
 	Name string
 }
 
-func (m TestJob) Execute(jobData map[string]string) {
+func (m *TestJob) Execute(jobData map[string]string) {
 	log.Debug("Execute(): In TestJob")
 	println("AAAAAAAAA mgwrngp wrnmg wrmgpmwr pgmpwor mgpowrm gpowrmg wor gmwro gmwA AAAAAAAAAAAAAAAA")
 	for k, v := range jobData {
@@ -66,10 +66,10 @@ func (m TestJob) Execute(jobData map[string]string) {
 	testJobData = jobData
 }
 
-func (m TestJob) JobName() string {
+func (m *TestJob) JobName() string {
 	return m.Name
 }
 
-func (m TestJob) GetJobData() map[string]string {
+func (m *TestJob) GetJobData() map[string]string {
 	return testJobData
 }

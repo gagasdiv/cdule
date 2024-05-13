@@ -46,7 +46,8 @@ type CduleRepository interface {
 
 	CreateSchedule(schedule *Schedule) (*Schedule, error)
 	UpdateSchedule(schedule *Schedule) (*Schedule, error)
-	GetSchedule(scheduleID int64) (*Schedule, error)
+	GetSchedule(executionID int64) (*Schedule, error)
+	GetScheduleByID(scheduleID int64) (*Schedule, error)
 	GetScheduleBetween(scheduleStart, scheduleEnd int64, workerID string) ([]Schedule, error)
 	GetScheduleBefore(nanoUnix int64, workerID string) ([]Schedule, error)
 	GetPassedSchedule(nanoUnix int64, workerID string, onlyOnces bool) ([]Schedule, error)
@@ -205,7 +206,7 @@ func (c cduleRepository) GetJobHistoryWithLimit(jobID int64, limit int) ([]JobHi
 // GetJobHistoryForSchedule to get a JobHistory by scheduleID
 func (c cduleRepository) GetJobHistoryForSchedule(scheduleID int64) (*JobHistory, error) {
 	var jobHistory JobHistory
-	if err := c.DB.Where("execution_id = ?", scheduleID).First(&jobHistory).Error; err != nil {
+	if err := c.DB.Where("id = ?", scheduleID).First(&jobHistory).Error; err != nil {
 		return nil, err
 	}
 	return &jobHistory, nil
@@ -248,6 +249,15 @@ func (c cduleRepository) GetSchedule(executionID int64) (*Schedule, error) {
 	return &schedule, nil
 }
 
+// GetSchedule to get a schedule by ID
+func (c cduleRepository) GetScheduleByID(scheduleID int64) (*Schedule, error) {
+	var schedule Schedule
+	if err := c.DB.Where("id = ?", scheduleID).Find(&schedule).Error; err != nil {
+		return nil, err
+	}
+	return &schedule, nil
+}
+
 // GetScheduleBetween to get a schedule between scheduleStart and scheduleEnd and by workerID
 func (c cduleRepository) GetScheduleBetween(scheduleStart, scheduleEnd int64, workerID string) ([]Schedule, error) {
 	var schedules []Schedule
@@ -273,7 +283,7 @@ func (c cduleRepository) GetPassedSchedule(nanoUnix int64, workerID string, only
 	jobHistoriesTableName := getTableName(JobHistory{})
 	query := c.DB.
 		Joins("Job", DB.Where(&Job{ Once: onlyOnces })).
-		Joins(fmt.Sprintf(`left join %[2]s cjh on %[1]s.execution_id = cjh.execution_id and %[1]s.job_id = cjh.job_id and not cjh.status = ?`, scheduleTableName, jobHistoriesTableName), JobStatusFailed).
+		Joins(fmt.Sprintf(`left join %[2]s cjh on %[1]s.id = cjh.schedule_id and %[1]s.job_id = cjh.job_id and not cjh.status = ?`, scheduleTableName, jobHistoriesTableName), JobStatusFailed).
 		Where(`cjh.id is null`).
 		Where(fmt.Sprintf(`(%[1]s.execution_id <= ? and %[1]s.worker_id = ?)`, scheduleTableName), nanoUnix, workerID).
 		Order(fmt.Sprintf(`%[1]s.execution_id asc`, scheduleTableName))
@@ -309,8 +319,8 @@ func (c cduleRepository) DeleteScheduleForJob(jobID int64) ([]Schedule, error) {
 		return nil, err
 	}
 	for _, schedule := range schedules {
-		if err := c.DB.Where("job_id = ? and execution_id = ?",
-			schedule.JobID, schedule.ExecutionID).Delete(&Schedule{}).Error; err != nil {
+		if err := c.DB.Where("id = ?",
+			schedule.ID).Delete(&Schedule{}).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -324,8 +334,8 @@ func (c cduleRepository) DeleteScheduleForWorker(workerID string) ([]Schedule, e
 		return nil, err
 	}
 	for _, schedule := range schedules {
-		if err := c.DB.Where("job_id = ? and execution_id = ?",
-			schedule.JobID, schedule.ExecutionID).Delete(&Schedule{}).Error; err != nil {
+		if err := c.DB.Where("id = ?",
+			schedule.ID).Delete(&Schedule{}).Error; err != nil {
 			return nil, err
 		}
 	}

@@ -116,14 +116,21 @@ func (j *AbstractJob) BuildToRunNow() (*model.Job, error) {
 func (j *AbstractJob) buildFirstSchedule(job *model.Job, schedule *model.Schedule) (*model.Job, *model.Schedule, error) {
 	// register job, this is used later to get the type of a job
 	registerType(j.Job)
+
 	jobModel, err := model.CduleRepos.CduleRepository.GetJobByName(j.Job.JobName())
 	if nil != jobModel || nil != err {
-		return nil, nil, fmt.Errorf("job with Name: %s already exists", jobModel.JobName)
-	}
-	job, err = model.CduleRepos.CduleRepository.CreateJob(job)
-	if err != nil {
-		log.Error(err.Error())
-		return nil, nil, err
+		if job.Once && jobModel.Once {
+			job = jobModel
+			log.Debugf("Found a Job with the same Name: %s, but allowed since both jobs are Once jobs", job.JobName)
+		} else {
+			return nil, nil, fmt.Errorf("job with Name: %s already exists", jobModel.JobName)
+		}
+	} else {
+		job, err = model.CduleRepos.CduleRepository.CreateJob(job)
+		if err != nil {
+			log.Error(err.Error())
+			return nil, nil, err
+		}
 	}
 
 	schedule.JobID = job.ID

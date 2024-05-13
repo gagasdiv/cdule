@@ -64,7 +64,7 @@ func TestRepository_JobHistory(t *testing.T) {
 
 	require.Equal(t, expectedResult.Status, actualResultJobHistoryArray[0].Status)
 	require.Equal(t, expectedResult.JobID, actualResultJobHistoryArray[0].JobID)
-	require.Equal(t, expectedResult.ExecutionID, actualResultJobHistoryArray[0].ExecutionID)
+	require.Equal(t, expectedResult.ScheduleID, actualResultJobHistoryArray[0].ScheduleID)
 
 	actualResultJobHistoryArray, err = CduleRepos.CduleRepository.GetJobHistoryWithLimit(expectedResult.JobID, 2)
 	require.Equal(t, 1, len(actualResultJobHistoryArray))
@@ -72,13 +72,13 @@ func TestRepository_JobHistory(t *testing.T) {
 	expectedResult.Status = JobStatusInProgress
 	_, err = CduleRepos.CduleRepository.UpdateJobHistory(expectedResult)
 
-	actualResult, err := CduleRepos.CduleRepository.GetJobHistoryForSchedule(testJobHistory.ExecutionID)
+	actualResult, err := CduleRepos.CduleRepository.GetJobHistoryForSchedule(testJobHistory.ScheduleID)
 
 	require.Equal(t, expectedResult.Status, actualResult.Status)
 
 	actualResultJobHistoryArray, err = CduleRepos.CduleRepository.DeleteJobHistory(expectedResult.JobID)
 
-	require.Equal(t, expectedResult.ExecutionID, actualResultJobHistoryArray[0].ExecutionID)
+	require.Equal(t, expectedResult.ScheduleID, actualResultJobHistoryArray[0].ScheduleID)
 }
 
 func TestRepository_Schedule(t *testing.T) {
@@ -286,8 +286,7 @@ func createTestJobHistory() (*JobHistory, error) {
 	return &JobHistory{
 		Model:       Model{},
 		JobID:       2,
-		ExecutionID: 34534543534,
-		DeletedAt:   gorm.DeletedAt{},
+		ScheduleID:  2,
 		Status:      "NEW",
 		WorkerID:    "dsinghvi-host",
 		RetryCount:  0,
@@ -301,9 +300,6 @@ func createTestSchedule() (*Schedule, error) {
 	}
 	schedule := &Schedule{
 		ExecutionID: 34534543534,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		DeletedAt:   gorm.DeletedAt{},
 		WorkerID:    "dsinghvi-host",
 		JobID:       2,
 		JobData:     jobDataMapStr,

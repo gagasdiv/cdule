@@ -43,8 +43,7 @@ type Job struct {
 type JobHistory struct {
 	Model
 	JobID       int64          `json:"job_id"`
-	ExecutionID int64          `json:"execution_id"`
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
+	ScheduleID  int64          `json:"schedule_id"`
 	Status      JobStatus      `json:"status"`
 	WorkerID    string         `json:"worker_id"`
 	RetryCount  int            `json:"retry_count"`
@@ -52,12 +51,10 @@ type JobHistory struct {
 
 // Schedule used by Execution Routine to execute a scheduled job in the evert one minute duration
 type Schedule struct {
+	Model
 	ExecutionID int64 `gorm:"primaryKey" json:"execution_id"`
 	JobID       int64 `gorm:"primaryKey" json:"job_id"`
 	Job         Job   `gorm:"foreignKey:job_id;references:id;constraint:OnDelete:CASCADE"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
 	WorkerID    string         `json:"worker_id"`
 	JobData     string         `json:"job_data"`
 }

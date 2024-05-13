@@ -12,7 +12,6 @@ import (
 
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // ScheduleWatcher struct
@@ -107,8 +106,7 @@ func runScheduleJobs(schedules []model.Schedule) {
 				// if job history is not there for this schedule, so this should be executed.
 				jobHistory = &model.JobHistory{
 					JobID:       schedule.JobID,
-					ExecutionID: schedule.ExecutionID,
-					DeletedAt:   gorm.DeletedAt{},
+					ScheduleID:  schedule.ID,
 					Status:      model.JobStatusNew,
 					WorkerID:    schedule.WorkerID,
 					RetryCount:  0,
@@ -145,9 +143,6 @@ func runScheduleJobs(schedules []model.Schedule) {
 			workerIDForNextRun, _ := findNextAvailableWorker(workers, schedule)
 			newSchedule := model.Schedule{
 				ExecutionID: nextRunTime,
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
-				DeletedAt:   gorm.DeletedAt{},
 				WorkerID:    workerIDForNextRun,
 				JobID:       schedule.JobID,
 				JobData:     jobDataStr,
