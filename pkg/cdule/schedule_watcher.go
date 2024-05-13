@@ -93,15 +93,15 @@ func runScheduleJobs(schedules []model.Schedule) {
 		if err == nil {
 			jobHistory, err = model.CduleRepos.CduleRepository.GetJobHistoryForSchedule(schedule.ExecutionID)
 			j := JobRegistry[scheduledJob.JobName]
-			jobInstance := reflect.New(j).Elem().Interface()
+			// jobInstance := reflect.New(j).Elem().Interface()
+			jobInstance := reflect.New(j).Interface()
 
 			if err != nil && err.Error() == "record not found" && jobHistory != nil {
 				// if job history was present but not executed
 				if jobHistory.Status == model.JobStatusNew {
 					jobHistory.Status = model.JobStatusInProgress
 					model.CduleRepos.CduleRepository.UpdateJobHistory(jobHistory)
-					jobInstance.(Job).Execute(jobDataMap)
-					jobDataMap = jobInstance.(Job).GetJobData()
+					jobDataMap = executeJob(jobInstance, jobHistory, &jobDataMap)
 				}
 			} else {
 				// if job history is not there for this schedule, so this should be executed.
@@ -210,8 +210,9 @@ then build from source by uncommenting the above method and comment the followin
 */
 func executeJob(jobInstance any, jobHistory *model.JobHistory, jobDataMap *map[string]string) map[string]string {
 	defer panicRecovery(jobHistory)
-	jobInstance.(Job).Execute(*jobDataMap)
-	return jobInstance.(Job).GetJobData()
+	job := jobInstance.(Job)
+	job.Execute(*jobDataMap)
+	return job.GetJobData()
 }
 
 // If there is any panic from Job Execution, set the JobStatus as FAILED
