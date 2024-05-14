@@ -53,8 +53,10 @@ type CduleRepository interface {
 	GetPassedSchedule(nanoUnix int64, workerID string, onlyOnces bool) ([]Schedule, error)
 	GetSchedulesForJob(jobID int64) ([]Schedule, error)
 	GetSchedulesForWorker(workerID string) ([]Schedule, error)
+	GetSchedulesForJobName(jobName string, subName string) ([]Schedule, error)
 	DeleteScheduleForJob(jobID int64) ([]Schedule, error)
 	DeleteScheduleForWorker(workerID string) ([]Schedule, error)
+	DeleteScheduleForJobName(jobName string, subName string) ([]Schedule, error)
 }
 
 // CreateWorker to create a worker
@@ -283,7 +285,7 @@ func (c cduleRepository) GetPassedSchedule(nanoUnix int64, workerID string, only
 	jobHistoriesTableName := getTableName(JobHistory{})
 	query := c.DB.
 		Joins("Job", DB.Where(&Job{ Once: onlyOnces })).
-		Joins(fmt.Sprintf(`left join %[2]s cjh on %[1]s.id = cjh.schedule_id and %[1]s.job_id = cjh.job_id and not cjh.status = ?`, scheduleTableName, jobHistoriesTableName), JobStatusFailed).
+		Joins(fmt.Sprintf(`left join %[2]s cjh on %[1]s.id = cjh.schedule_id and not cjh.status = ?`, scheduleTableName, jobHistoriesTableName), JobStatusFailed).
 		Where(`cjh.id is null`).
 		Where(fmt.Sprintf(`(%[1]s.execution_id <= ? and %[1]s.worker_id = ?)`, scheduleTableName), nanoUnix, workerID).
 		Order(fmt.Sprintf(`%[1]s.execution_id asc`, scheduleTableName))
@@ -312,6 +314,22 @@ func (c cduleRepository) GetSchedulesForWorker(workerID string) ([]Schedule, err
 	return schedules, nil
 }
 
+// GetSchedulesForJob to get a schedules by jobID
+func (c cduleRepository) GetSchedulesForJobName(jobName string, subName string) ([]Schedule, error) {
+	var schedules []Schedule
+	scheduleTableName := getTableName(Schedule{})
+	jobHistoriesTableName := getTableName(JobHistory{})
+	if err := c.DB.
+		Joins("Job", DB.Where(&Job{ JobName: jobName, SubName: subName }, "JobName", "SubName") ).
+		Joins(fmt.Sprintf(`left join %[2]s cjh on %[1]s.id = cjh.schedule_id and not cjh.status = ?`, scheduleTableName, jobHistoriesTableName), JobStatusFailed).
+		Where(`cjh.id is null`).
+		Find(&schedules).Error;
+		err != nil {
+		return nil, err
+	}
+	return schedules, nil
+}
+
 // DeleteScheduleForJob to delete a schedules by jobID
 func (c cduleRepository) DeleteScheduleForJob(jobID int64) ([]Schedule, error) {
 	schedules, err := c.GetSchedulesForJob(jobID)
@@ -330,6 +348,21 @@ func (c cduleRepository) DeleteScheduleForJob(jobID int64) ([]Schedule, error) {
 // DeleteScheduleForWorker to delete a schedules by workerID
 func (c cduleRepository) DeleteScheduleForWorker(workerID string) ([]Schedule, error) {
 	schedules, err := c.GetSchedulesForWorker(workerID)
+	if nil != err {
+		return nil, err
+	}
+	for _, schedule := range schedules {
+		if err := c.DB.Where("id = ?",
+			schedule.ID).Delete(&Schedule{}).Error; err != nil {
+			return nil, err
+		}
+	}
+	return schedules, nil
+}
+
+// DeleteScheduleForJobName to delete a schedules by jobName and subName
+func (c cduleRepository) DeleteScheduleForJobName(jobName string, subName string) ([]Schedule, error) {
+	schedules, err := c.GetSchedulesForJobName(jobName, subName)
 	if nil != err {
 		return nil, err
 	}

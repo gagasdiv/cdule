@@ -257,7 +257,7 @@ func createTestJob() (*Job, error) {
 	return &Job{
 		Model:          Model{},
 		JobName:        "job.RepoTestJob",
-		GroupName:      "",
+		SubName:        "",
 		CronExpression: utils.EveryWeekDayAtNoon,
 		Expired:        false,
 		JobData:        jobDataStr,

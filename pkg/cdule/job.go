@@ -6,3 +6,6 @@ type Job interface {
 	JobName() string
 	GetJobData() map[string]string
 }
+type JobSub interface {
+	SubName() string
+}

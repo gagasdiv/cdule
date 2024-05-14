@@ -90,9 +90,17 @@ func runScheduleJobs(schedules []model.Schedule) {
 		}
 		var jobHistory *model.JobHistory
 		if err == nil {
-			jobHistory, err = model.CduleRepos.CduleRepository.GetJobHistoryForSchedule(schedule.ExecutionID)
-			j := JobRegistry[scheduledJob.JobName]
-			// jobInstance := reflect.New(j).Elem().Interface()
+			jobHistory, err = model.CduleRepos.CduleRepository.GetJobHistoryForSchedule(schedule.ID)
+			j, ok := JobRegistry[scheduledJob.JobName]
+			if !ok {
+				log.Errorf("Error while running Schedule for %d : unregistered job %s", schedule.JobID, scheduledJob.JobName)
+				// Change run status to failed
+				if err != nil && jobHistory != nil {
+					jobHistory.Status = model.JobStatusFailed
+					model.CduleRepos.CduleRepository.UpdateJobHistory(jobHistory)
+				}
+				continue
+			}
 			jobInstance := reflect.New(j).Interface()
 
 			if err != nil && err.Error() == "record not found" && jobHistory != nil {

@@ -19,7 +19,7 @@ var JobRegistry = make(map[string]reflect.Type)
 // ScheduleParser cron parser
 var ScheduleParser cron.Parser
 
-func registerType(job Job) {
+func RegisterType(job Job) {
 	t := reflect.TypeOf(job).Elem()
 	JobRegistry[job.JobName()] = t
 }
@@ -28,13 +28,17 @@ func registerType(job Job) {
 type AbstractJob struct {
 	Job     Job
 	JobData map[string]string
+	SubName string
 }
 
 // NewJob to create new abstract job
-func NewJob(job Job, jobData map[string]string) *AbstractJob {
+func NewJob(job Job, jobData map[string]string, subName ...string) *AbstractJob {
 	aj := &AbstractJob{
 		Job:     job,
 		JobData: jobData,
+	}
+	if len(subName) > 0 {
+		aj.SubName = subName[0]
 	}
 	return aj
 }
@@ -52,7 +56,7 @@ func (j *AbstractJob) Build(cronExpression string) (*model.Job, error) {
 	}
 	newJob := &model.Job{
 		JobName:        j.Job.JobName(),
-		GroupName:      "",
+		SubName:        j.SubName,
 		CronExpression: cronExpression,
 		Expired:        false,
 		JobData:        jobDataStr,
@@ -86,7 +90,7 @@ func (j *AbstractJob) BuildToRunAt(t time.Time) (*model.Job, error) {
 	}
 	newJob := &model.Job{
 		JobName:        j.Job.JobName(),
-		GroupName:      "",
+		SubName:        j.SubName,
 		CronExpression: "",
 		Expired:        false,
 		JobData:        jobDataStr,
@@ -115,7 +119,7 @@ func (j *AbstractJob) BuildToRunNow() (*model.Job, error) {
 // Build to build job and store in the database
 func (j *AbstractJob) buildFirstSchedule(job *model.Job, schedule *model.Schedule) (*model.Job, *model.Schedule, error) {
 	// register job, this is used later to get the type of a job
-	registerType(j.Job)
+	RegisterType(j.Job)
 
 	jobModel, err := model.CduleRepos.CduleRepository.GetJobByName(j.Job.JobName())
 	if nil != jobModel || nil != err {
@@ -142,4 +146,15 @@ func (j *AbstractJob) buildFirstSchedule(job *model.Job, schedule *model.Schedul
 	log.Debugf("*** Job Scheduled Info ***\n JobName: %s,\n Schedule Cron: %s,\n Job Scheduled Time: %d,\n Worker: %s ",
 		job.JobName, job.CronExpression, schedule.ExecutionID, schedule.WorkerID)
 	return job, schedule, err
+}
+
+// CancelJob to delete schedules for a job in the database by jobName and subName
+func CancelJob(jobName string, subName string) (error) {
+	schedules, err := model.CduleRepos.CduleRepository.DeleteScheduleForJobName(jobName, subName)
+	if err == nil {
+		log.Debugf("Cancelled schedule(s) based on jobName: %#v and subName: %#v ; %d schedule(s) ", jobName, subName, len(schedules))
+	} else {
+		log.Warnf("Failed cancelling schedule(s) based on jobName: %#v and subName: %#v ; err: %s ", jobName, subName, err.Error())
+	}
+	return err
 }
