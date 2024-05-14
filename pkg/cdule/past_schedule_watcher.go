@@ -16,11 +16,14 @@ type PastScheduleWatcher struct {
 // Run to run watcher in a continuous loop
 func (t *PastScheduleWatcher) Run() {
 	runJobs := func () {
-		now := time.Now()
+		// Adjust with schedule watcher so that there's no collision/duplication/race condition
+		now := time.Now().Add(-1 * time.Minute)
 		runPassedScheduleJobs(now.UnixNano())
 	}
 
-	runJobs()
+	if t.RunImmediately {
+		runJobs()
+	}
 
 	for {
 		select {

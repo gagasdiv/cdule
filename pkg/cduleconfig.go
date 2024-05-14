@@ -4,6 +4,10 @@ import "gorm.io/gorm/logger"
 
 // CduleConfig cdule configuration
 type CduleConfig struct {
+	// Whether to run scheduler immediately at startup; by default only run
+	// after each tick (e.g if ticker is 60 seconds then first run has to wait
+	// 60 seconds).
+	RunImmediately   bool            `yaml:"runimmediately"`
 	Cduletype        string          `yaml:"cduletype"`
 	Dburl            string          `yaml:"dburl"` // underscore creates the problem for e.f. db_url, so should be avoided
 	Cduleconsistency string          `yaml:"cduleconsistency"`

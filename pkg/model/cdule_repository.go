@@ -287,7 +287,7 @@ func (c cduleRepository) GetPassedSchedule(nanoUnix int64, workerID string, only
 		Joins("Job", DB.Where(&Job{ Once: onlyOnces })).
 		Joins(fmt.Sprintf(`left join %[2]s cjh on %[1]s.id = cjh.schedule_id and not cjh.status = ?`, scheduleTableName, jobHistoriesTableName), JobStatusFailed).
 		Where(`cjh.id is null`).
-		Where(fmt.Sprintf(`(%[1]s.execution_id <= ? and %[1]s.worker_id = ?)`, scheduleTableName), nanoUnix, workerID).
+		Where(fmt.Sprintf(`(%[1]s.execution_id < ? and %[1]s.worker_id = ?)`, scheduleTableName), nanoUnix, workerID).
 		Order(fmt.Sprintf(`%[1]s.execution_id asc`, scheduleTableName))
 
 	if err := query.Find(&schedules).Error; err != nil {

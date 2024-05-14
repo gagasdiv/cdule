@@ -55,23 +55,23 @@ func (cdule *Cdule) NewCdule(config ...*pkg.CduleConfig) {
 		model.CduleRepos.CduleRepository.CreateWorker(&worker)
 	}
 
-	cdule.createWatcherAndWaitForSignal(cfg.WatchPast)
+	cdule.createWatcherAndWaitForSignal(cfg.RunImmediately, cfg.WatchPast)
 }
 
-func (cdule *Cdule) createWatcherAndWaitForSignal(watchPast bool) {
+func (cdule *Cdule) createWatcherAndWaitForSignal(runImmediately bool, watchPast bool) {
 	/*
 		schedule watcher stop logic to abort program with signal like ctrl + c
 		c := make(chan os.Signal)
 		signal.Notify(c, os.Interrupt)*/
 
 	workerWatcher := createWorkerWatcher()
-	schedulerWatcher := createSchedulerWatcher()
+	schedulerWatcher := createSchedulerWatcher(runImmediately)
 	cdule.WorkerWatcher = workerWatcher
 	cdule.ScheduleWatcher = schedulerWatcher
 
 	var pastScheduleWatcher *PastScheduleWatcher
 	if watchPast {
-		pastScheduleWatcher = createPastSchedulerWatcher()
+		pastScheduleWatcher = createPastSchedulerWatcher(runImmediately)
 		cdule.PastScheduleWatcher = pastScheduleWatcher
 	}
 	/*select {
@@ -108,10 +108,11 @@ func createWorkerWatcher() *WorkerWatcher {
 	return workerWatcher
 }
 
-func createSchedulerWatcher() *ScheduleWatcher {
+func createSchedulerWatcher(runImmediately bool) *ScheduleWatcher {
 	scheduleWatcher := &ScheduleWatcher{
 		Closed: make(chan struct{}),
 		Ticker: time.NewTicker(time.Minute * 1), // used for worker health check update in db.
+		RunImmediately: runImmediately,
 	}
 
 	scheduleWatcher.WG.Add(1)
@@ -122,11 +123,12 @@ func createSchedulerWatcher() *ScheduleWatcher {
 	return scheduleWatcher
 }
 
-func createPastSchedulerWatcher() *PastScheduleWatcher {
+func createPastSchedulerWatcher(runImmediately bool) *PastScheduleWatcher {
 	pastScheduleWatcher := &PastScheduleWatcher{
 		ScheduleWatcher: ScheduleWatcher{
 			Closed: make(chan struct{}),
 			Ticker: time.NewTicker(time.Minute * 1),
+			RunImmediately: runImmediately,
 		},
 	}
 

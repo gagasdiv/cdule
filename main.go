@@ -17,6 +17,7 @@ TODO This TestJob schedule in main program is for the development debugging.
 func main() {
 	c := cdule.Cdule{}
 	c.NewCduleWithWorker("worker1", &pkg.CduleConfig{
+		RunImmediately:    true,
 		Cduletype:        "DATABASE",
 		Dburl:            "postgres://postgres:postgres@localhost:5432/qweqwe?sslmode=disable",
 		Cduleconsistency: "AT_MOST_ONCE",
@@ -37,9 +38,10 @@ func main() {
 	jobData["three"] = "3"
 	// runAt, _ := time.Parse("2006-01-02 15:04:05-07:00", "2024-04-29 17:20:00+07:00")
 	// _, err := cdule.NewJob(myJob, jobData).BuildToRunAt(runAt)
-	_, err := cdule.NewJob(myJob, jobData).BuildToRunIn(59 * time.Second)
+	// _, err := cdule.NewJob(myJob, jobData).BuildToRunIn(59 * time.Second)
+	_, err := cdule.NewJob(myJob, jobData).BuildToRunNow()
 	// time.Sleep(58 * time.Second)
-	cdule.CancelJob("TestJob", "")
+	// cdule.CancelJob("TestJob", "")
 	if nil != err {
 		log.Error(err)
 	}
