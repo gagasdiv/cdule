@@ -16,8 +16,9 @@ import (
 
 // ScheduleWatcher struct
 type ScheduleWatcher struct {
-	Closed          chan struct{}
+	Closed         chan struct{}
 	WG             sync.WaitGroup
+	TickDuration   time.Duration
 	Ticker         *time.Ticker
 	RunImmediately bool
 }
@@ -29,7 +30,7 @@ var nextScheduleExecutionTime int64
 func (t *ScheduleWatcher) Run() {
 	runJobs := func () {
 		now := time.Now()
-		lastScheduleExecutionTime = now.Add(-1 * time.Minute).UnixNano()
+		lastScheduleExecutionTime = now.Add(-1 * t.TickDuration).UnixNano()
 		nextScheduleExecutionTime = now.UnixNano()
 
 		log.Debugf("lastScheduleExecutionTime %d, nextScheduleExecutionTime %d", lastScheduleExecutionTime, nextScheduleExecutionTime)

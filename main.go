@@ -17,7 +17,8 @@ TODO This TestJob schedule in main program is for the development debugging.
 func main() {
 	c := cdule.Cdule{}
 	c.NewCduleWithWorker("worker1", &pkg.CduleConfig{
-		RunImmediately:    true,
+		RunImmediately:   false,
+		TickDuration:     "50s",
 		Cduletype:        "DATABASE",
 		Dburl:            "postgres://postgres:postgres@localhost:5432/qweqwe?sslmode=disable",
 		Cduleconsistency: "AT_MOST_ONCE",

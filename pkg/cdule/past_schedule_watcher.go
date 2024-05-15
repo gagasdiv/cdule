@@ -17,7 +17,7 @@ type PastScheduleWatcher struct {
 func (t *PastScheduleWatcher) Run() {
 	runJobs := func () {
 		// Adjust with schedule watcher so that there's no collision/duplication/race condition
-		now := time.Now().Add(-1 * time.Minute)
+		now := time.Now().Add(-1 * t.TickDuration)
 		runPassedScheduleJobs(now.UnixNano())
 	}
 

@@ -55,23 +55,23 @@ func (cdule *Cdule) NewCdule(config ...*pkg.CduleConfig) {
 		model.CduleRepos.CduleRepository.CreateWorker(&worker)
 	}
 
-	cdule.createWatcherAndWaitForSignal(cfg.RunImmediately, cfg.WatchPast)
+	cdule.createWatcherAndWaitForSignal(cfg)
 }
 
-func (cdule *Cdule) createWatcherAndWaitForSignal(runImmediately bool, watchPast bool) {
+func (cdule *Cdule) createWatcherAndWaitForSignal(config *pkg.CduleConfig) {
 	/*
 		schedule watcher stop logic to abort program with signal like ctrl + c
 		c := make(chan os.Signal)
 		signal.Notify(c, os.Interrupt)*/
 
 	workerWatcher := createWorkerWatcher()
-	schedulerWatcher := createSchedulerWatcher(runImmediately)
+	schedulerWatcher := createSchedulerWatcher(config)
 	cdule.WorkerWatcher = workerWatcher
 	cdule.ScheduleWatcher = schedulerWatcher
 
 	var pastScheduleWatcher *PastScheduleWatcher
-	if watchPast {
-		pastScheduleWatcher = createPastSchedulerWatcher(runImmediately)
+	if config.WatchPast {
+		pastScheduleWatcher = createPastSchedulerWatcher(config)
 		cdule.PastScheduleWatcher = pastScheduleWatcher
 	}
 	/*select {
@@ -108,11 +108,16 @@ func createWorkerWatcher() *WorkerWatcher {
 	return workerWatcher
 }
 
-func createSchedulerWatcher(runImmediately bool) *ScheduleWatcher {
+func createSchedulerWatcher(config *pkg.CduleConfig) *ScheduleWatcher {
+	tick, err := time.ParseDuration(config.TickDuration)
+	if err != nil {
+		panic(err)
+	}
 	scheduleWatcher := &ScheduleWatcher{
 		Closed: make(chan struct{}),
-		Ticker: time.NewTicker(time.Minute * 1), // used for worker health check update in db.
-		RunImmediately: runImmediately,
+		TickDuration: tick,
+		Ticker: time.NewTicker(tick),
+		RunImmediately: config.RunImmediately,
 	}
 
 	scheduleWatcher.WG.Add(1)
@@ -123,12 +128,16 @@ func createSchedulerWatcher(runImmediately bool) *ScheduleWatcher {
 	return scheduleWatcher
 }
 
-func createPastSchedulerWatcher(runImmediately bool) *PastScheduleWatcher {
+func createPastSchedulerWatcher(config *pkg.CduleConfig) *PastScheduleWatcher {
+	tick, err := time.ParseDuration(config.TickDuration)
+	if err != nil {
+		panic(err)
+	}
 	pastScheduleWatcher := &PastScheduleWatcher{
 		ScheduleWatcher: ScheduleWatcher{
-			Closed: make(chan struct{}),
-			Ticker: time.NewTicker(time.Minute * 1),
-			RunImmediately: runImmediately,
+			TickDuration: tick,
+			Ticker: time.NewTicker(tick),
+			RunImmediately: config.RunImmediately,
 		},
 	}
 
