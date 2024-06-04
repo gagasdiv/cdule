@@ -135,6 +135,7 @@ func createPastSchedulerWatcher(config *pkg.CduleConfig) *PastScheduleWatcher {
 	}
 	pastScheduleWatcher := &PastScheduleWatcher{
 		ScheduleWatcher: ScheduleWatcher{
+			Closed: make(chan struct{}),
 			TickDuration: tick,
 			Ticker: time.NewTicker(tick),
 			RunImmediately: config.RunImmediately,

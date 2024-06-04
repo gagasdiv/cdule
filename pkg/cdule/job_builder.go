@@ -2,7 +2,6 @@ package cdule
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -121,21 +120,24 @@ func (j *AbstractJob) buildFirstSchedule(job *model.Job, schedule *model.Schedul
 	// register job, this is used later to get the type of a job
 	RegisterType(j.Job)
 
-	jobModel, err := model.CduleRepos.CduleRepository.GetJobByName(j.Job.JobName())
-	if nil != jobModel || nil != err {
-		if job.Once && jobModel.Once {
-			log.Debugf("Found a Job with the same Name: %s, but allowed since both jobs are Once jobs", job.JobName)
-		} else {
-			return nil, nil, fmt.Errorf("job with Name: %s already exists", jobModel.JobName)
-		}
+	existingJob, err := model.CduleRepos.CduleRepository.GetRepeatingJobByName(j.Job.JobName())
+	if err != nil {
+		log.Error(err.Error())
+		return nil, nil, err
+	}
+	if nil != existingJob && !job.Once {
+		log.Debugf("Found a non-once Job with the same Name: %s", existingJob.JobName)
+		CancelJob(existingJob.JobName, existingJob.SubName)
 	}
 
+	log.Debugf("Making new Job with Name: %s", job.JobName)
 	job, err = model.CduleRepos.CduleRepository.CreateJob(job)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, nil, err
 	}
 
+	// Make first schedule
 	schedule.JobID = job.ID
 	_, err = model.CduleRepos.CduleRepository.CreateSchedule(schedule)
 	if err != nil {

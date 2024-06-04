@@ -39,10 +39,17 @@ func main() {
 	jobData["three"] = "3"
 	// runAt, _ := time.Parse("2006-01-02 15:04:05-07:00", "2024-04-29 17:20:00+07:00")
 	// _, err := cdule.NewJob(myJob, jobData).BuildToRunAt(runAt)
-	// _, err := cdule.NewJob(myJob, jobData).BuildToRunIn(59 * time.Second)
-	_, err := cdule.NewJob(myJob, jobData).BuildToRunNow()
+	_, err := cdule.NewJob(myJob, jobData).BuildToRunIn(59 * time.Second)
+	// _, err := cdule.NewJob(myJob, jobData).BuildToRunNow()
+	// _, err := cdule.NewJob(myJob, jobData).Build(utils.EveryMinute)
 	// time.Sleep(58 * time.Second)
 	// cdule.CancelJob("TestJob", "")
+	if nil != err {
+		log.Error(err)
+	}
+	time.Sleep(55 * time.Second)
+	// _, err = cdule.NewJob(myJob, jobData).Build(utils.EveryEvenMinute)
+	_, err = cdule.NewJob(myJob, jobData).BuildToRunIn(59 * time.Second)
 	if nil != err {
 		log.Error(err)
 	}

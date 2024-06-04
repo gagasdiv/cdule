@@ -33,8 +33,10 @@ type CduleRepository interface {
 
 	CreateJob(job *Job) (*Job, error)
 	UpdateJob(job *Job) (*Job, error)
+	SaveJob(job *Job) (*Job, error)
 	GetJob(jobID int64) (*Job, error)
 	GetJobByName(name string) (*Job, error)
+	GetRepeatingJobByName(name string) (*Job, error)
 	DeleteJob(jobID int64) (*Job, error)
 
 	CreateJobHistory(jobHistory *JobHistory) (*JobHistory, error)
@@ -135,6 +137,14 @@ func (c cduleRepository) UpdateJob(job *Job) (*Job, error) {
 	return job, nil
 }
 
+// SaveJob to upsert a job (all columns)
+func (c cduleRepository) SaveJob(job *Job) (*Job, error) {
+	if err := c.DB.Save(job).Error; err != nil {
+		return nil, err
+	}
+	return job, nil
+}
+
 // GetJob to get a job based on ID
 func (c cduleRepository) GetJob(jobID int64) (*Job, error) {
 	var job Job
@@ -151,6 +161,18 @@ func (c cduleRepository) GetJob(jobID int64) (*Job, error) {
 func (c cduleRepository) GetJobByName(jobName string) (*Job, error) {
 	var job Job
 	if err := c.DB.Where("job_name = ?", jobName).Find(&job).Error; err != nil {
+		return nil, err
+	}
+	if job.ID == 0 {
+		return nil, nil
+	}
+	return &job, nil
+}
+
+// GetRepeatingJobByName to get a repeating/non-once job based on Name
+func (c cduleRepository) GetRepeatingJobByName(jobName string) (*Job, error) {
+	var job Job
+	if err := c.DB.Where("job_name = ?", jobName).Where("once != true").Find(&job).Error; err != nil {
 		return nil, err
 	}
 	if job.ID == 0 {
