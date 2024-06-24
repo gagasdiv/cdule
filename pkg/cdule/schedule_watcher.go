@@ -172,16 +172,9 @@ func runScheduleJobs(schedules []model.Schedule) {
 	}
 }
 
-// WorkerJobCount struct
-type WorkerJobCount struct {
-	WorkerID string `json:"worker_id"`
-	Count    int64  `json:"count"`
-}
-
 func findNextAvailableWorker(workers []model.Worker, schedule model.Schedule) (string, error) {
 	workerName := schedule.WorkerID
-	var workerJobCountMetrics []WorkerJobCount
-	model.DB.Raw("SELECT worker_id, count(1) FROM job_histories WHERE job_id = ? group by worker_id", schedule.JobID).Scan(&workerJobCountMetrics)
+	workerJobCountMetrics, _ := model.CduleRepos.CduleRepository.GetWorkerCountByJobID(schedule.JobID)
 	log.Debugf("workerJobCountMetrics %v", workerJobCountMetrics)
 	if len(workerJobCountMetrics) <= 0 {
 		log.Debugf("workerName %s would be used", workerName)
@@ -196,7 +189,7 @@ func findNextAvailableWorker(workers []model.Worker, schedule model.Schedule) (s
 			}
 		}
 		if appendWorker {
-			newWorkerMetric := WorkerJobCount{
+			newWorkerMetric := model.WorkerJobCount{
 				WorkerID: worker.WorkerID,
 				Count:    0,
 			}

@@ -59,6 +59,8 @@ type CduleRepository interface {
 	DeleteScheduleForJob(jobID int64) ([]Schedule, error)
 	DeleteScheduleForWorker(workerID string) ([]Schedule, error)
 	DeleteScheduleForJobName(jobName string, subName string) ([]Schedule, error)
+
+	GetWorkerCountByJobID(jobID int64) ([]WorkerJobCount, error)
 }
 
 // CreateWorker to create a worker
@@ -395,4 +397,13 @@ func (c cduleRepository) DeleteScheduleForJobName(jobName string, subName string
 		}
 	}
 	return schedules, nil
+}
+
+// GetWorkerCountByJobID to count number of each worker by jobID
+func (c cduleRepository) GetWorkerCountByJobID(jobID int64) ([]WorkerJobCount, error) {
+	var workerCounts []WorkerJobCount
+	if err := c.DB.Model(&JobHistory{}).Select("worker_id, count(1) as count").Group("worker_id").Find(&workerCounts).Error; err != nil {
+		return nil, err
+	}
+	return workerCounts, nil
 }

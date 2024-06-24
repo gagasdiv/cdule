@@ -68,3 +68,9 @@ type Worker struct {
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
+
+// WorkerJobCount struct
+type WorkerJobCount struct {
+	WorkerID string `json:"worker_id"`
+	Count    int64  `json:"count"`
+}
