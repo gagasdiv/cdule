@@ -308,7 +308,7 @@ func (c cduleRepository) GetPassedSchedule(nanoUnix int64, workerID string, only
 	scheduleTableName := getTableName(Schedule{})
 	jobHistoriesTableName := getTableName(JobHistory{})
 	query := c.DB.
-		InnerJoins("Job", DB.Where(&Job{ Once: onlyOnces })).
+		InnerJoins("Job", DB.Where(&Job{Once: onlyOnces})).
 		Joins(fmt.Sprintf(`left join %[2]s cjh on %[1]s.id = cjh.schedule_id and not cjh.status = ?`, scheduleTableName, jobHistoriesTableName), JobStatusFailed).
 		Where(`cjh.id is null`).
 		Where(fmt.Sprintf(`(%[1]s.execution_id < ? and %[1]s.worker_id = ?)`, scheduleTableName), nanoUnix, workerID).
@@ -341,14 +341,9 @@ func (c cduleRepository) GetSchedulesForWorker(workerID string) ([]Schedule, err
 // GetSchedulesForJob to get a schedules by jobName and subName
 func (c cduleRepository) GetSchedulesForJobName(jobName string, subName string) ([]Schedule, error) {
 	var schedules []Schedule
-	scheduleTableName := getTableName(Schedule{})
-	jobHistoriesTableName := getTableName(JobHistory{})
 	if err := c.DB.
-		InnerJoins("Job", DB.Where(&Job{ JobName: jobName, SubName: subName }, "JobName", "SubName") ).
-		Joins(fmt.Sprintf(`left join %[2]s cjh on %[1]s.id = cjh.schedule_id and not cjh.status = ?`, scheduleTableName, jobHistoriesTableName), JobStatusFailed).
-		Where(`cjh.id is null`).
-		Find(&schedules).Error;
-		err != nil {
+		InnerJoins("Job", DB.Where(&Job{JobName: jobName, SubName: subName}, "JobName", "SubName")).
+		Find(&schedules).Error; err != nil {
 		return nil, err
 	}
 	return schedules, nil
