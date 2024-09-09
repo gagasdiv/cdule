@@ -397,7 +397,7 @@ func (c cduleRepository) DeleteScheduleForJobName(jobName string, subName string
 // GetWorkerCountByJobID to count number of each worker by jobID
 func (c cduleRepository) GetWorkerCountByJobID(jobID int64) ([]WorkerJobCount, error) {
 	var workerCounts []WorkerJobCount
-	if err := c.DB.Model(&JobHistory{}).Select("worker_id, count(1) as count").Group("worker_id").Find(&workerCounts).Error; err != nil {
+	if err := c.DB.Model(&JobHistory{}).Select("worker_id, count(1) as count").Where("job_id = ?", jobID).Group("worker_id").Find(&workerCounts).Error; err != nil {
 		return nil, err
 	}
 	return workerCounts, nil
